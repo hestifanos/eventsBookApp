@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "887002477759",
+    "project_id": "campuseventflutter",
+    "storage_bucket": "campuseventflutter.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:887002477759:android:06db2f43033477cdd0020a",
+        "android_client_info": {
+          "package_name": "com.example.campus_events"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBIlR9DLnrrok3Hx_9T12r7J1yQjDm_tQM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

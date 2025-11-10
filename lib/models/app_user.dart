@@ -1,0 +1,31 @@
+class AppUser {
+  final String uid;
+  final String email;
+  final String? displayName;
+  final String role; // "student" or "organizer"
+
+  AppUser({
+    required this.uid,
+    required this.email,
+    this.displayName,
+    required this.role,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'uid': uid,
+      'email': email,
+      'displayName': displayName,
+      'role': role,
+    };
+  }
+
+  factory AppUser.fromMap(Map<String, dynamic> map) {
+    return AppUser(
+      uid: map['uid'] as String,
+      email: map['email'] as String,
+      displayName: map['displayName'] as String?,
+      role: map['role'] as String? ?? 'student',
+    );
+  }
+}
