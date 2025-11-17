@@ -1,4 +1,6 @@
+// lib/screens/event_list_page.dart
 import 'package:flutter/material.dart';
+
 import '../services/event_service.dart';
 import '../models/event.dart';
 import '../widgets/event_card.dart';
@@ -62,7 +64,6 @@ class EventListPage extends StatelessWidget {
                     vertical: 20,
                   ),
                   child: ConstrainedBox(
-                    // at least as tall as the viewport so we can center
                     constraints: BoxConstraints(
                       minHeight: constraints.maxHeight - 40,
                     ),
@@ -70,7 +71,6 @@ class EventListPage extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Let the cards handle their own side padding via margin
                           for (final e in events)
                             EventCard(
                               event: e,

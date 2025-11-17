@@ -1,4 +1,6 @@
+// lib/screens/admin_page.dart
 import 'package:flutter/material.dart';
+
 import '../models/app_user.dart';
 import '../services/event_service.dart';
 import '../models/event.dart';
@@ -11,7 +13,10 @@ class AdminPage extends StatelessWidget {
   const AdminPage({super.key, required this.user});
 
   Future<void> _confirmDelete(
-      BuildContext context, EventService service, Event event) async {
+      BuildContext context,
+      EventService service,
+      Event event,
+      ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -92,7 +97,6 @@ class AdminPage extends StatelessWidget {
                     vertical: 20,
                   ),
                   child: ConstrainedBox(
-                    // so we can center when content is short
                     constraints: BoxConstraints(
                       minHeight: constraints.maxHeight - 40,
                     ),

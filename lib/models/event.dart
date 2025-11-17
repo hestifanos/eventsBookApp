@@ -11,6 +11,9 @@ class Event {
   final double? latitude;
   final double? longitude;
 
+  /// New: where the event image is hosted (Firebase Storage download URL)
+  final String? imageUrl;
+
   Event({
     required this.id,
     required this.title,
@@ -23,6 +26,7 @@ class Event {
     required this.locationName,
     this.latitude,
     this.longitude,
+    this.imageUrl, // NEW
   });
 
   Map<String, dynamic> toMap() {
@@ -37,6 +41,7 @@ class Event {
       'locationName': locationName,
       'latitude': latitude,
       'longitude': longitude,
+      'imageUrl': imageUrl, // NEW
     };
   }
 
@@ -53,6 +58,7 @@ class Event {
       locationName: map['locationName'] ?? '',
       latitude: (map['latitude'] as num?)?.toDouble(),
       longitude: (map['longitude'] as num?)?.toDouble(),
+      imageUrl: map['imageUrl'] as String?, // NEW
     );
   }
 }
