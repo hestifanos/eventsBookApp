@@ -45,7 +45,7 @@ class EventService {
     await _eventsRef.doc(id).delete();
   }
 
-  /// Internal helper: upload an image to Firebase Storage and return its URL.
+  /// Upload an image to Firebase Storage and return its URL.
   /// If [imageFile] is null, this returns null.
   Future<String?> _uploadEventImage(String eventId, XFile? imageFile) async {
     if (imageFile == null) return null;
@@ -53,12 +53,27 @@ class EventService {
     final file = File(imageFile.path);
     final ref = _storage.ref().child('event_images').child('$eventId.jpg');
 
-    await ref.putFile(file);
-    return ref.getDownloadURL();
+    final uploadTask = await ref.putFile(file);
+    final downloadUrl = await uploadTask.ref.getDownloadURL();
+    return downloadUrl;
   }
 
-  /// Create a new event document. If [imageFile] is provided,
-  /// it is uploaded and its download URL stored in [Event.imageUrl].
+  /// Upload a video to Firebase Storage and return its URL.
+  /// If [videoFile] is null, this returns null.
+  Future<String?> _uploadEventVideo(String eventId, XFile? videoFile) async {
+    if (videoFile == null) return null;
+
+    final file = File(videoFile.path);
+    // You could inspect file extension; for simplicity, store as mp4.
+    final ref = _storage.ref().child('event_videos').child('$eventId.mp4');
+
+    final uploadTask = await ref.putFile(file);
+    final downloadUrl = await uploadTask.ref.getDownloadURL();
+    return downloadUrl;
+  }
+
+  /// Create a new event document. If [imageFile] or [videoFile] is provided,
+  /// they are uploaded and their URLs stored on the Event.
   Future<void> createEvent({
     required String title,
     required String description,
@@ -70,11 +85,15 @@ class EventService {
     double? latitude,
     double? longitude,
     XFile? imageFile,
+    XFile? videoFile,
   }) async {
     final docRef = _eventsRef.doc(); // auto id
     final eventId = docRef.id;
 
+    // In your UI we guarantee either image OR video, but this code
+    // supports both being null or only one being set.
     final imageUrl = await _uploadEventImage(eventId, imageFile);
+    final videoUrl = await _uploadEventVideo(eventId, videoFile);
 
     final event = Event(
       id: eventId,
@@ -89,6 +108,7 @@ class EventService {
       latitude: latitude,
       longitude: longitude,
       imageUrl: imageUrl,
+      videoUrl: videoUrl,
     );
 
     await docRef.set(event.toMap());

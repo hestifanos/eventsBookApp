@@ -1,3 +1,4 @@
+// lib/models/event.dart
 class Event {
   final String id;
   final String title;
@@ -11,8 +12,9 @@ class Event {
   final double? latitude;
   final double? longitude;
 
-  /// New: where the event image is hosted (Firebase Storage download URL)
+  // NEW: media fields (optional)
   final String? imageUrl;
+  final String? videoUrl;
 
   Event({
     required this.id,
@@ -26,7 +28,8 @@ class Event {
     required this.locationName,
     this.latitude,
     this.longitude,
-    this.imageUrl, // NEW
+    this.imageUrl,
+    this.videoUrl,
   });
 
   Map<String, dynamic> toMap() {
@@ -41,7 +44,8 @@ class Event {
       'locationName': locationName,
       'latitude': latitude,
       'longitude': longitude,
-      'imageUrl': imageUrl, // NEW
+      'imageUrl': imageUrl,
+      'videoUrl': videoUrl,
     };
   }
 
@@ -58,7 +62,8 @@ class Event {
       locationName: map['locationName'] ?? '',
       latitude: (map['latitude'] as num?)?.toDouble(),
       longitude: (map['longitude'] as num?)?.toDouble(),
-      imageUrl: map['imageUrl'] as String?, // NEW
+      imageUrl: map['imageUrl'] as String?,
+      videoUrl: map['videoUrl'] as String?,
     );
   }
 }

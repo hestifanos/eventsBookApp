@@ -72,6 +72,24 @@ class _EventDetailPageState extends State<EventDetailPage> {
     }
   }
 
+  Future<void> _openVideo() async {
+    final e = _event;
+    if (e == null || e.videoUrl == null || e.videoUrl!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No video for this event')),
+      );
+      return;
+    }
+    final uri = Uri.parse(e.videoUrl!);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open video')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -97,10 +115,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Color(0xFF4C1D95),
-                Color(0xFF6D28D9),
-              ],
+              colors: [Color(0xFF4C1D95), Color(0xFF6D28D9)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -113,7 +128,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // image at top (if present)
+            // Media area: image first, otherwise a video button
             if (e.imageUrl != null && e.imageUrl!.isNotEmpty)
               ClipRRect(
                 borderRadius: BorderRadius.circular(20),
@@ -123,8 +138,66 @@ class _EventDetailPageState extends State<EventDetailPage> {
                   width: double.infinity,
                   fit: BoxFit.cover,
                 ),
+              )
+            else if (e.videoUrl != null && e.videoUrl!.isNotEmpty)
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.play_circle_fill,
+                      size: 50,
+                      color: Color(0xFF6D28D9),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'This event has a video',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: _openVideo,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 10,
+                        ),
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          side: BorderSide(
+                            color: const Color(0xFF6D28D9).withOpacity(0.2),
+                          ),
+                        ),
+                      ),
+                      child: const Text(
+                        'Open event video',
+                        style: TextStyle(
+                          color: Color(0xFF6D28D9),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            if (e.imageUrl != null && e.imageUrl!.isNotEmpty)
+            if ((e.imageUrl != null && e.imageUrl!.isNotEmpty) ||
+                (e.videoUrl != null && e.videoUrl!.isNotEmpty))
               const SizedBox(height: 20),
 
             Container(
