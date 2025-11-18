@@ -4,14 +4,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'firebase_options.dart';
 import 'services/auth_service.dart';
+import 'services/notification_service.dart'; // 👈 NEW
 import 'screens/login_page.dart';
 import 'screens/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 👇 init local notifications (channels, timezone, etc.)
+  await NotificationService.init();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
   runApp(const CampusEventsApp());
 }
 
@@ -56,8 +62,7 @@ class CampusEventsApp extends StatelessWidget {
 
     return MaterialApp(
       title: 'Campus Events',
-      debugShowCheckedModeBanner:
-      false, // 👈 removes the red "DEBUG" tag on all screens
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: colorScheme,

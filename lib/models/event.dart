@@ -7,12 +7,12 @@ class Event {
   final String hostName;
   final int maxAttendees;
   final int currentAttendees;
-  final String dateTimeText; // e.g. "Nov 22, 3:00 PM"
+  final String dateTimeText;
   final String locationName;
   final double? latitude;
   final double? longitude;
 
-  // NEW: media fields (optional)
+  // media fields
   final String? imageUrl;
   final String? videoUrl;
 

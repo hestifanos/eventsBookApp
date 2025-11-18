@@ -1,8 +1,10 @@
 // lib/screens/event_detail_page.dart
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
 
 import '../services/event_service.dart';
+import '../services/notification_service.dart';
 import '../models/event.dart';
 
 class EventDetailPage extends StatefulWidget {
@@ -32,6 +34,130 @@ class _EventDetailPageState extends State<EventDetailPage> {
       _event = event;
       _loading = false;
     });
+  }
+
+  /// Parse strings like "Nov 22, 3:00 PM" or "dec 23, 9:30 pm" into a DateTime.
+  /// - Uses current year.
+  /// - If that datetime is already in the past, assumes it's next year.
+  DateTime? _parseEventDateTime(String text) {
+    final raw = text.trim();
+    if (raw.isEmpty) return null;
+
+    // Normalize spaces
+    var normalized = raw.replaceAll(RegExp(r'\s+'), ' ');
+
+    // Normalize AM/PM
+    normalized = normalized.replaceAllMapped(
+      RegExp(r'\b(am|pm)\b', caseSensitive: false),
+          (m) => m.group(0)!.toUpperCase(),
+    );
+
+    // Capitalize first letter for e.g. "nov 23" -> "Nov 23"
+    if (normalized.isNotEmpty) {
+      normalized = normalized[0].toUpperCase() + normalized.substring(1);
+    }
+
+    final now = DateTime.now();
+
+    // Supported formats
+    final formats = <DateFormat>[
+      DateFormat('MMM d, h:mm a'), // "Nov 23, 3:00 PM"
+      DateFormat('MMM d, h a'),    // "Nov 23, 3 PM"
+      DateFormat('MM/dd/yyyy'),    // "12/12/2025"
+      DateFormat('dd/MM/yyyy'),    // "12/12/2025"
+      DateFormat('yyyy-MM-dd'),    // "2025-12-12"
+    ];
+
+    for (final f in formats) {
+      try {
+        final parsed = f.parseLoose(normalized);
+
+        DateTime dt;
+
+        // If the pattern contains a month name (MMM)
+        if (f.pattern?.contains('MMM') == true) {
+          // Month-name formats usually don't include year
+          dt = DateTime(
+            now.year,
+            parsed.month,
+            parsed.day,
+            parsed.hour,
+            parsed.minute,
+          );
+        } else {
+          // Numeric formats → use parsed year
+          final hour = (parsed.hour == 0 && parsed.minute == 0)
+              ? 9 // default to 9 AM if time not provided
+              : parsed.hour;
+
+          dt = DateTime(
+            parsed.year,
+            parsed.month,
+            parsed.day,
+            hour,
+            parsed.minute,
+          );
+        }
+
+        // If result is before now, assume next year
+        if (dt.isBefore(now)) {
+          dt = DateTime(
+            dt.year + 1,
+            dt.month,
+            dt.day,
+            dt.hour,
+            dt.minute,
+          );
+        }
+
+        return dt;
+      } catch (_) {
+        // try next format
+      }
+    }
+
+    return null; // nothing matched
+  }
+
+
+
+  Future<void> _setReminder() async {
+    final e = _event;
+    if (e == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Event not loaded yet')),
+      );
+      return;
+    }
+
+    final dt = _parseEventDateTime(e.dateTimeText);
+    if (dt == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Could not understand the event date/time. '
+                'Please edit the event and pick the time using the date/time picker.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    await NotificationService.scheduleEventReminder(
+      id: e.id,
+      title: 'Upcoming event: ${e.title}',
+      body: 'Starts at ${e.dateTimeText}',
+      eventTime: dt,
+    );
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Reminder set for ${DateFormat('MMM d, h:mm a').format(dt.subtract(const Duration(hours: 2)))}',
+        ),
+      ),
+    );
   }
 
   Future<void> _openInMaps() async {
@@ -200,6 +326,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
                 (e.videoUrl != null && e.videoUrl!.isNotEmpty))
               const SizedBox(height: 20),
 
+            // Main info card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(18),
@@ -243,32 +370,50 @@ class _EventDetailPageState extends State<EventDetailPage> {
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 24),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton(
-                      onPressed: _openInMaps,
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        backgroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          side: BorderSide(
-                            color: const Color(0xFF6D28D9).withOpacity(0.2),
+
+                  // Clean, non-overflowing buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _openInMaps,
+                          icon: const Icon(Icons.map_outlined),
+                          label: const Text(
+                            'Open in Maps',               // shorter label so it doesn't wrap
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            minimumSize: const Size(0, 48), // consistent height
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
                           ),
                         ),
                       ),
-                      child: const Text(
-                        'Open in Google Maps',
-                        style: TextStyle(
-                          color: Color(0xFF6D28D9),
-                          fontWeight: FontWeight.w600,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _setReminder,
+                          icon: const Icon(Icons.notifications_active_outlined),
+                          label: const Text(
+                            'Set reminder',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF4C1D95),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            minimumSize: const Size(0, 48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
+                    ],
+                  )
+                  ,
                 ],
               ),
             ),
