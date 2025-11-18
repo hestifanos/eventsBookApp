@@ -48,7 +48,7 @@ class _HomePageState extends State<HomePage> {
     await _authService.logout();
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginPage()),
+      MaterialPageRoute(builder: (_) => LoginPage()),
           (_) => false,
     );
   }
@@ -228,7 +228,7 @@ class _HomePageState extends State<HomePage> {
                 label: 'Browse events',
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const EventListPage()),
+                    MaterialPageRoute(builder: (_) => EventListPage()),
                   );
                 },
               ),
@@ -238,7 +238,7 @@ class _HomePageState extends State<HomePage> {
                 label: 'Campus map',
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const MapPage()),
+                    MaterialPageRoute(builder: (_) => MapPage()),
                   );
                 },
               ),
@@ -290,8 +290,8 @@ class _StudentEventsBody extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 4),
                   child: Text(
                     'Events',
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -314,8 +314,8 @@ class _StudentEventsBody extends StatelessWidget {
                     final events = snapshot.data ?? [];
                     if (events.isEmpty) {
                       return const Padding(
-                        padding:
-                        EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 24),
                         child: Text(
                           'No events yet. Check back soon!',
                         ),
@@ -382,8 +382,7 @@ class _OrganizerBody extends StatelessWidget {
                 description: 'Discover what’s happening on campus today.',
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (_) => const EventListPage()),
+                    MaterialPageRoute(builder: (_) => EventListPage()),
                   );
                 },
               ),
@@ -394,8 +393,7 @@ class _OrganizerBody extends StatelessWidget {
                 'Host a new event and reach more students.',
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (_) => const CreateEventPage()),
+                    MaterialPageRoute(builder: (_) => CreateEventPage()),
                   );
                 },
               ),

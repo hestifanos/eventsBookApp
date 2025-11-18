@@ -124,13 +124,19 @@ class _CreateEventPageState extends State<CreateEventPage> {
     setState(() => _saving = true);
     try {
       final user = _auth.currentUser!;
+
+      // --- Normalize date/time text before saving ---
+      // fixes cases like "Nov 28 6.00pm" → "Nov 28 6:00pm"
+      String rawDate = _dateTimeController.text.trim();
+      String normalizedDate = rawDate.replaceAll('.', ':');
+
       await _eventService.createEvent(
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         hostId: user.uid,
         hostName: user.email ?? 'Organizer',
         maxAttendees: int.tryParse(_maxAttendeesController.text.trim()) ?? 0,
-        dateTimeText: _dateTimeController.text.trim(),
+        dateTimeText: normalizedDate,
         locationName: _locationController.text.trim(),
         latitude: null,
         longitude: null,
@@ -181,7 +187,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight - 40),
+                constraints:
+                BoxConstraints(minHeight: constraints.maxHeight - 40),
                 child: Center(
                   child: Form(
                     key: _formKey,
@@ -208,10 +215,14 @@ class _CreateEventPageState extends State<CreateEventPage> {
                             pickedVideo: _pickedVideo,
                             videoReady: _videoReady,
                             controller: _videoController,
-                            onPickImageFromGallery: () => _pickImage(ImageSource.gallery),
-                            onPickImageFromCamera: () => _pickImage(ImageSource.camera),
-                            onPickVideoFromGallery: () => _pickVideo(ImageSource.gallery),
-                            onPickVideoFromCamera: () => _pickVideo(ImageSource.camera),
+                            onPickImageFromGallery: () =>
+                                _pickImage(ImageSource.gallery),
+                            onPickImageFromCamera: () =>
+                                _pickImage(ImageSource.camera),
+                            onPickVideoFromGallery: () =>
+                                _pickVideo(ImageSource.gallery),
+                            onPickVideoFromCamera: () =>
+                                _pickVideo(ImageSource.camera),
                             onToggleVideo: () {
                               if (_videoController == null) return;
                               setState(() {
@@ -239,11 +250,14 @@ class _CreateEventPageState extends State<CreateEventPage> {
                             decoration: const InputDecoration(
                               labelText: 'Title',
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(14)),
+                                borderRadius:
+                                BorderRadius.all(Radius.circular(14)),
                               ),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 14),
                             ),
-                            validator: (v) => v == null || v.isEmpty ? 'Title is required' : null,
+                            validator: (v) =>
+                            v == null || v.isEmpty ? 'Title is required' : null,
                           ),
                           const SizedBox(height: 16),
 
@@ -252,9 +266,11 @@ class _CreateEventPageState extends State<CreateEventPage> {
                             decoration: const InputDecoration(
                               labelText: 'Description',
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(14)),
+                                borderRadius:
+                                BorderRadius.all(Radius.circular(14)),
                               ),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 14),
                             ),
                             maxLines: 3,
                           ),
@@ -265,9 +281,11 @@ class _CreateEventPageState extends State<CreateEventPage> {
                             decoration: const InputDecoration(
                               labelText: 'Date & Time (e.g., Nov 28, 7:00 PM)',
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(14)),
+                                borderRadius:
+                                BorderRadius.all(Radius.circular(14)),
                               ),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 14),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -278,9 +296,11 @@ class _CreateEventPageState extends State<CreateEventPage> {
                             decoration: const InputDecoration(
                               labelText: 'Max attendees',
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(14)),
+                                borderRadius:
+                                BorderRadius.all(Radius.circular(14)),
                               ),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 14),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -290,11 +310,15 @@ class _CreateEventPageState extends State<CreateEventPage> {
                             decoration: const InputDecoration(
                               labelText: 'Location name / address',
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(14)),
+                                borderRadius:
+                                BorderRadius.all(Radius.circular(14)),
                               ),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 14),
                             ),
-                            validator: (v) => v == null || v.isEmpty ? 'Location is required' : null,
+                            validator: (v) => v == null || v.isEmpty
+                                ? 'Location is required'
+                                : null,
                           ),
                           const SizedBox(height: 24),
 
@@ -305,7 +329,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF4C1D95),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding:
+                                const EdgeInsets.symmetric(vertical: 14),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(24),
                                 ),
@@ -316,7 +341,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
                                 height: 22,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor:
+                                  AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
                                 ),
                               )
                                   : const Text('Save'),
@@ -400,8 +427,8 @@ class _MediaPickerCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(999),

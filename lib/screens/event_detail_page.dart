@@ -119,8 +119,6 @@ class _EventDetailPageState extends State<EventDetailPage> {
     return null; // nothing matched
   }
 
-
-
   Future<void> _setReminder() async {
     final e = _event;
     if (e == null) {
@@ -142,6 +140,10 @@ class _EventDetailPageState extends State<EventDetailPage> {
       );
       return;
     }
+
+    // Optional debug prints:
+    // print('DEBUG eventTime parsed: $dt');
+    // print('DEBUG scheduledTime: ${dt.subtract(const Duration(hours: 2))}');
 
     await NotificationService.scheduleEventReminder(
       id: e.id,
@@ -379,12 +381,13 @@ class _EventDetailPageState extends State<EventDetailPage> {
                           onPressed: _openInMaps,
                           icon: const Icon(Icons.map_outlined),
                           label: const Text(
-                            'Open in Maps',               // shorter label so it doesn't wrap
+                            'Open in Maps',
                             overflow: TextOverflow.ellipsis,
                           ),
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            minimumSize: const Size(0, 48), // consistent height
+                            padding:
+                            const EdgeInsets.symmetric(vertical: 12),
+                            minimumSize: const Size(0, 48),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(18),
                             ),
@@ -395,7 +398,8 @@ class _EventDetailPageState extends State<EventDetailPage> {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: _setReminder,
-                          icon: const Icon(Icons.notifications_active_outlined),
+                          icon:
+                          const Icon(Icons.notifications_active_outlined),
                           label: const Text(
                             'Set reminder',
                             overflow: TextOverflow.ellipsis,
@@ -403,7 +407,8 @@ class _EventDetailPageState extends State<EventDetailPage> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF4C1D95),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding:
+                            const EdgeInsets.symmetric(vertical: 12),
                             minimumSize: const Size(0, 48),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(18),
@@ -412,8 +417,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
                         ),
                       ),
                     ],
-                  )
-                  ,
+                  ),
                 ],
               ),
             ),

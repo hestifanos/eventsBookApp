@@ -48,52 +48,71 @@ class EventService {
   /// Upload an image to Firebase Storage and return its download URL.
   /// If [imageFile] is null OR upload fails with object-not-found, this returns null.
   Future<String?> _uploadEventImage(String eventId, XFile? imageFile) async {
-    if (imageFile == null) return null;
+    if (imageFile == null) {
+      print('DEBUG: No image selected for event $eventId');
+      return null;
+    }
 
     final file = File(imageFile.path);
-    final ref = _storage.ref().child('event_images').child('$eventId.jpg');
+    final ref = _storage.ref().child('event_images/$eventId.jpg');
 
     try {
+      print('DEBUG: Uploading image for event $eventId to ${ref.fullPath}');
       final snapshot = await ref.putFile(file);
 
       if (snapshot.state == TaskState.success) {
-        // Only ask for URL AFTER a successful upload
-        return await ref.getDownloadURL();
+        final url = await ref.getDownloadURL();
+        print('DEBUG: Image uploaded successfully. URL = $url');
+        return url;
       } else {
+        print('DEBUG: Image upload for $eventId did not reach success state.');
         return null;
       }
     } on FirebaseException catch (e) {
-      // If Storage says "object-not-found", just treat it as no image
       if (e.code == 'object-not-found') {
-        // You could log this for debugging if you want:
-        // debugPrint('Image object-not-found at ${ref.fullPath}');
+        print('DEBUG: Image object-not-found at ${ref.fullPath}');
         return null;
       }
-      rethrow; // let other errors bubble up (permission, network, etc.)
+      print('ERROR: Image upload failed for $eventId → ${e.code}: ${e.message}');
+      rethrow; // let other errors bubble up (permission, rules, network)
+    } catch (e) {
+      print('ERROR: Unexpected error during image upload for $eventId → $e');
+      rethrow;
     }
   }
 
   /// Upload a video to Firebase Storage and return its download URL.
   /// If [videoFile] is null OR upload fails with object-not-found, this returns null.
   Future<String?> _uploadEventVideo(String eventId, XFile? videoFile) async {
-    if (videoFile == null) return null;
+    if (videoFile == null) {
+      print('DEBUG: No video selected for event $eventId');
+      return null;
+    }
 
     final file = File(videoFile.path);
-    final ref = _storage.ref().child('event_videos').child('$eventId.mp4');
+    final ref = _storage.ref().child('event_videos/$eventId.mp4');
 
     try {
+      print('DEBUG: Uploading video for event $eventId to ${ref.fullPath}');
       final snapshot = await ref.putFile(file);
 
       if (snapshot.state == TaskState.success) {
-        return await ref.getDownloadURL();
+        final url = await ref.getDownloadURL();
+        print('DEBUG: Video uploaded successfully. URL = $url');
+        return url;
       } else {
+        print('DEBUG: Video upload for $eventId did not reach success state.');
         return null;
       }
     } on FirebaseException catch (e) {
       if (e.code == 'object-not-found') {
-        // debugPrint('Video object-not-found at ${ref.fullPath}');
+        print('DEBUG: Video object-not-found at ${ref.fullPath}');
         return null;
       }
+      print('ERROR: Video upload failed for $eventId → ${e.code}: ${e.message}');
+      rethrow;
+    } catch (e) {
+      print('ERROR: Unexpected error during video upload for $eventId → $e');
       rethrow;
     }
   }
@@ -116,6 +135,8 @@ class EventService {
     final docRef = _eventsRef.doc(); // auto id
     final eventId = docRef.id;
 
+    print('DEBUG: Creating event $eventId with title "$title"');
+
     // Upload media first (if present)
     final imageUrl = await _uploadEventImage(eventId, imageFile);
     final videoUrl = await _uploadEventVideo(eventId, videoFile);
@@ -137,5 +158,6 @@ class EventService {
     );
 
     await docRef.set(event.toMap());
+    print('DEBUG: Event $eventId saved to Firestore with imageUrl=$imageUrl videoUrl=$videoUrl');
   }
 }
