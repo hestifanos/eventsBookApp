@@ -56,8 +56,8 @@ class Event {
       description: map['description'] ?? '',
       hostId: map['hostId'] ?? '',
       hostName: map['hostName'] ?? '',
-      maxAttendees: (map['maxAttendees'] ?? 0) as int,
-      currentAttendees: (map['currentAttendees'] ?? 0) as int,
+      maxAttendees: (map['maxAttendees'] as num? ?? 0).toInt(),
+      currentAttendees: (map['currentAttendees'] as num? ?? 0).toInt(),
       dateTimeText: map['dateTimeText'] ?? '',
       locationName: map['locationName'] ?? '',
       latitude: (map['latitude'] as num?)?.toDouble(),
@@ -66,4 +66,5 @@ class Event {
       videoUrl: map['videoUrl'] as String?,
     );
   }
+
 }

@@ -45,31 +45,57 @@ class EventService {
     await _eventsRef.doc(id).delete();
   }
 
-  /// Upload an image to Firebase Storage and return its URL.
-  /// If [imageFile] is null, this returns null.
+  /// Upload an image to Firebase Storage and return its download URL.
+  /// If [imageFile] is null OR upload fails with object-not-found, this returns null.
   Future<String?> _uploadEventImage(String eventId, XFile? imageFile) async {
     if (imageFile == null) return null;
 
     final file = File(imageFile.path);
     final ref = _storage.ref().child('event_images').child('$eventId.jpg');
 
-    final uploadTask = await ref.putFile(file);
-    final downloadUrl = await uploadTask.ref.getDownloadURL();
-    return downloadUrl;
+    try {
+      final snapshot = await ref.putFile(file);
+
+      if (snapshot.state == TaskState.success) {
+        // Only ask for URL AFTER a successful upload
+        return await ref.getDownloadURL();
+      } else {
+        return null;
+      }
+    } on FirebaseException catch (e) {
+      // If Storage says "object-not-found", just treat it as no image
+      if (e.code == 'object-not-found') {
+        // You could log this for debugging if you want:
+        // debugPrint('Image object-not-found at ${ref.fullPath}');
+        return null;
+      }
+      rethrow; // let other errors bubble up (permission, network, etc.)
+    }
   }
 
-  /// Upload a video to Firebase Storage and return its URL.
-  /// If [videoFile] is null, this returns null.
+  /// Upload a video to Firebase Storage and return its download URL.
+  /// If [videoFile] is null OR upload fails with object-not-found, this returns null.
   Future<String?> _uploadEventVideo(String eventId, XFile? videoFile) async {
     if (videoFile == null) return null;
 
     final file = File(videoFile.path);
-    // You could inspect file extension; for simplicity, store as mp4.
     final ref = _storage.ref().child('event_videos').child('$eventId.mp4');
 
-    final uploadTask = await ref.putFile(file);
-    final downloadUrl = await uploadTask.ref.getDownloadURL();
-    return downloadUrl;
+    try {
+      final snapshot = await ref.putFile(file);
+
+      if (snapshot.state == TaskState.success) {
+        return await ref.getDownloadURL();
+      } else {
+        return null;
+      }
+    } on FirebaseException catch (e) {
+      if (e.code == 'object-not-found') {
+        // debugPrint('Video object-not-found at ${ref.fullPath}');
+        return null;
+      }
+      rethrow;
+    }
   }
 
   /// Create a new event document. If [imageFile] or [videoFile] is provided,
@@ -90,8 +116,7 @@ class EventService {
     final docRef = _eventsRef.doc(); // auto id
     final eventId = docRef.id;
 
-    // In your UI we guarantee either image OR video, but this code
-    // supports both being null or only one being set.
+    // Upload media first (if present)
     final imageUrl = await _uploadEventImage(eventId, imageFile);
     final videoUrl = await _uploadEventVideo(eventId, videoFile);
 
