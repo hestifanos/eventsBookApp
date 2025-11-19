@@ -1,16 +1,16 @@
-// lib/screens/create_event_page.dart
-import 'dart:io';
 
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
-
 import '../services/event_service.dart';
 
 class CreateEventPage extends StatefulWidget {
-  const CreateEventPage({super.key});
+  const CreateEventPage(
+      {super.key}
+      );
 
   @override
   State<CreateEventPage> createState() => _CreateEventPageState();
@@ -29,7 +29,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
 
   bool _saving = false;
 
-  // ------ media picking state ------
+  // media picking state
   final ImagePicker _picker = ImagePicker();
   XFile? _pickedImage;
   XFile? _pickedVideo;
@@ -125,8 +125,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
     try {
       final user = _auth.currentUser!;
 
-      // --- Normalize date/time text before saving ---
-      // fixes cases like "Nov 28 6.00pm" → "Nov 28 6:00pm"
+      //Normalize date/time text before saving
       String rawDate = _dateTimeController.text.trim();
       String normalizedDate = rawDate.replaceAll('.', ':');
 
@@ -140,8 +139,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
         locationName: _locationController.text.trim(),
         latitude: null,
         longitude: null,
-        imageFile: _pickedImage,   // pass image if selected
-        videoFile: _pickedVideo,   // pass video if selected
+        imageFile: _pickedImage,
+        videoFile: _pickedVideo,
       );
 
       if (!mounted) return;
@@ -279,7 +278,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
                           TextFormField(
                             controller: _dateTimeController,
                             decoration: const InputDecoration(
-                              labelText: 'Date & Time (e.g., Nov 28, 7:00 PM)',
+                              labelText: 'Date & Time (Nov 20, 7:00 PM)',
                               border: OutlineInputBorder(
                                 borderRadius:
                                 BorderRadius.all(Radius.circular(14)),
@@ -308,7 +307,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
                           TextFormField(
                             controller: _locationController,
                             decoration: const InputDecoration(
-                              labelText: 'Location name / address',
+                              labelText: 'Address',
                               border: OutlineInputBorder(
                                 borderRadius:
                                 BorderRadius.all(Radius.circular(14)),
@@ -401,7 +400,7 @@ class _MediaPickerCard extends StatelessWidget {
     } else if (hasVideo) {
       selectedLabel = 'Video selected';
     } else {
-      selectedLabel = 'No media selected (optional)';
+      selectedLabel = 'No media selected';
     }
 
     return Card(
@@ -455,7 +454,7 @@ class _MediaPickerCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // ---------- PREVIEW ----------
+            // preview
             if (!hasImage && !hasVideo)
               Column(
                 children: [
@@ -560,7 +559,7 @@ class _MediaPickerCard extends StatelessWidget {
             const SizedBox(height: 16),
             const Divider(height: 24),
 
-            // ---------- IMAGE CONTROLS ----------
+            // image controls
             Text(
               'Image',
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -612,7 +611,7 @@ class _MediaPickerCard extends StatelessWidget {
 
             const SizedBox(height: 18),
 
-            // ---------- VIDEO CONTROLS ----------
+            // video controls
             Text(
               'Video',
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -622,7 +621,7 @@ class _MediaPickerCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Use a short clip (max ~3 minutes) to showcase the event.',
+              'Use a short clip to showcase the event.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: Colors.black54,
               ),

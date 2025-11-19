@@ -1,4 +1,5 @@
-// lib/models/event.dart
+
+
 class Event {
   final String id;
   final String title;
@@ -12,7 +13,7 @@ class Event {
   final double? latitude;
   final double? longitude;
 
-  // media fields
+  // Optional media fields
   final String? imageUrl;
   final String? videoUrl;
 
@@ -32,6 +33,7 @@ class Event {
     this.videoUrl,
   });
 
+  // from app to firestore
   Map<String, dynamic> toMap() {
     return {
       'title': title,
@@ -49,22 +51,22 @@ class Event {
     };
   }
 
-  factory Event.fromDoc(String id, Map<String, dynamic> map) {
+  //from firestore to the app
+  factory Event.fromMap(String id, Map<String, dynamic> map) {
     return Event(
       id: id,
-      title: map['title'] ?? '',
-      description: map['description'] ?? '',
-      hostId: map['hostId'] ?? '',
-      hostName: map['hostName'] ?? '',
+      title: map['title'] as String? ?? '',
+      description: map['description'] as String? ?? '',
+      hostId: map['hostId'] as String? ?? '',
+      hostName: map['hostName'] as String? ?? '',
       maxAttendees: (map['maxAttendees'] as num? ?? 0).toInt(),
       currentAttendees: (map['currentAttendees'] as num? ?? 0).toInt(),
-      dateTimeText: map['dateTimeText'] ?? '',
-      locationName: map['locationName'] ?? '',
+      dateTimeText: map['dateTimeText'] as String? ?? '',
+      locationName: map['locationName'] as String? ?? '',
       latitude: (map['latitude'] as num?)?.toDouble(),
       longitude: (map['longitude'] as num?)?.toDouble(),
       imageUrl: map['imageUrl'] as String?,
       videoUrl: map['videoUrl'] as String?,
     );
   }
-
 }

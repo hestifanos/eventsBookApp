@@ -1,6 +1,5 @@
-// lib/screens/account_page.dart
-import 'package:flutter/material.dart';
 
+import 'package:flutter/material.dart';
 import '../models/app_user.dart';
 
 class AccountPage extends StatelessWidget {
@@ -11,6 +10,7 @@ class AccountPage extends StatelessWidget {
     required this.user,
   });
 
+  // private function to return an user friendly label
   String _roleLabel(String role) {
     switch (role) {
       case 'organizer':
@@ -23,6 +23,8 @@ class AccountPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    // take the current app theme and assign it to theme
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -164,15 +166,6 @@ class AccountPage extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // Small note
-            Text(
-              'Your account is used to log in, create events (if you are an organizer), '
-                  'and RSVP to campus activities.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.black54,
-              ),
-            ),
           ],
         ),
       ),

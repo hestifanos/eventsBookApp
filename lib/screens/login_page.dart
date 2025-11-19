@@ -61,8 +61,8 @@ class _LoginPageState extends State<LoginPage> {
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Color(0xFF4C1D95), // dark purple
-                Color(0xFF6D28D9), // lighter purple
+                Color(0xFF4C1D95),
+                Color(0xFF6D28D9),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -145,7 +145,7 @@ class _LoginPageState extends State<LoginPage> {
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             decoration: const InputDecoration(
-                              hintText: 'name@example.com',
+                              hintText: 'name@ontariotechu.net',
                               border: OutlineInputBorder(
                                 borderRadius:
                                 BorderRadius.all(Radius.circular(14)),

@@ -1,25 +1,32 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'firebase_options.dart';
 import 'services/auth_service.dart';
-import 'services/notification_service.dart'; // 👈 NEW
+import 'services/notification_service.dart';
 import 'screens/login_page.dart';
 import 'screens/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 👇 init local notifications (channels, timezone, etc.)
-  await NotificationService.init();
-
+  // 1) Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // 2) Initialize local notifications
+  await NotificationService.init();
+
+  // 3) Force a test notification on app start
+  //await NotificationService.debugTestNotification();
+
+  // 4) Run the app
   runApp(const CampusEventsApp());
 }
+
 
 class CampusEventsApp extends StatelessWidget {
   const CampusEventsApp({super.key});

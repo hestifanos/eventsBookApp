@@ -1,11 +1,10 @@
-// lib/screens/event_detail_page.dart
-import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:intl/intl.dart';
 
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../models/event.dart';
 import '../services/event_service.dart';
 import '../services/notification_service.dart';
-import '../models/event.dart';
 
 class EventDetailPage extends StatefulWidget {
   final String eventId;
@@ -17,7 +16,8 @@ class EventDetailPage extends StatefulWidget {
 }
 
 class _EventDetailPageState extends State<EventDetailPage> {
-  final _eventService = EventService();
+  final EventService _eventService = EventService();
+
   Event? _event;
   bool _loading = true;
 
@@ -36,47 +36,42 @@ class _EventDetailPageState extends State<EventDetailPage> {
     });
   }
 
-  /// Parse strings like "Nov 22, 3:00 PM" or "dec 23, 9:30 pm" into a DateTime.
-  /// - Uses current year.
-  /// - If that datetime is already in the past, assumes it's next year.
+  //date/time parsing
+
   DateTime? _parseEventDateTime(String text) {
     final raw = text.trim();
     if (raw.isEmpty) return null;
 
-    // Normalize spaces
     var normalized = raw.replaceAll(RegExp(r'\s+'), ' ');
 
-    // Normalize AM/PM
+    // normalize am/pm
     normalized = normalized.replaceAllMapped(
       RegExp(r'\b(am|pm)\b', caseSensitive: false),
           (m) => m.group(0)!.toUpperCase(),
     );
 
-    // Capitalize first letter for e.g. "nov 23" -> "Nov 23"
+    // capitalise first letter of month name
     if (normalized.isNotEmpty) {
       normalized = normalized[0].toUpperCase() + normalized.substring(1);
     }
 
     final now = DateTime.now();
 
-    // Supported formats
     final formats = <DateFormat>[
-      DateFormat('MMM d, h:mm a'), // "Nov 23, 3:00 PM"
-      DateFormat('MMM d, h a'),    // "Nov 23, 3 PM"
-      DateFormat('MM/dd/yyyy'),    // "12/12/2025"
-      DateFormat('dd/MM/yyyy'),    // "12/12/2025"
-      DateFormat('yyyy-MM-dd'),    // "2025-12-12"
+      DateFormat('MMM d, h:mm a'),
+      DateFormat('MMM d, h a'),
+      DateFormat('MM/dd/yyyy'),
+      DateFormat('dd/MM/yyyy'),
+      DateFormat('yyyy-MM-dd'),
     ];
 
     for (final f in formats) {
       try {
         final parsed = f.parseLoose(normalized);
-
         DateTime dt;
 
-        // If the pattern contains a month name (MMM)
         if (f.pattern?.contains('MMM') == true) {
-          // Month-name formats usually don't include year
+
           dt = DateTime(
             now.year,
             parsed.month,
@@ -85,11 +80,9 @@ class _EventDetailPageState extends State<EventDetailPage> {
             parsed.minute,
           );
         } else {
-          // Numeric formats → use parsed year
-          final hour = (parsed.hour == 0 && parsed.minute == 0)
-              ? 9 // default to 9 AM if time not provided
-              : parsed.hour;
-
+          // full date parsed
+          final hour =
+          (parsed.hour == 0 && parsed.minute == 0) ? 9 : parsed.hour;
           dt = DateTime(
             parsed.year,
             parsed.month,
@@ -99,16 +92,6 @@ class _EventDetailPageState extends State<EventDetailPage> {
           );
         }
 
-        // If result is before now, assume next year
-        if (dt.isBefore(now)) {
-          dt = DateTime(
-            dt.year + 1,
-            dt.month,
-            dt.day,
-            dt.hour,
-            dt.minute,
-          );
-        }
 
         return dt;
       } catch (_) {
@@ -116,22 +99,22 @@ class _EventDetailPageState extends State<EventDetailPage> {
       }
     }
 
-    return null; // nothing matched
+    return null;
   }
 
-  Future<void> _setReminder() async {
-    final e = _event;
-    if (e == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Event not loaded yet')),
-      );
-      return;
-    }
+  //reminder scheduling
 
-    final dt = _parseEventDateTime(e.dateTimeText);
+  Future<void> _scheduleReminder(BuildContext context) async {
+    final event = _event;
+    if (event == null) return;
+
+    final dt = _parseEventDateTime(event.dateTimeText);
     if (dt == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (_) => const AlertDialog(
+          title: Text('Cannot schedule reminder'),
           content: Text(
             'Could not understand the event date/time. '
                 'Please edit the event and pick the time using the date/time picker.',
@@ -141,109 +124,79 @@ class _EventDetailPageState extends State<EventDetailPage> {
       return;
     }
 
-    // Optional debug prints:
-    // print('DEBUG eventTime parsed: $dt');
-    // print('DEBUG scheduledTime: ${dt.subtract(const Duration(hours: 2))}');
+    final now = DateTime.now();
+
+    // 1)  do NOT schedule past time
+    if (dt.isBefore(now)) {
+      if (!mounted) return;
+      showDialog<void>(
+        context: context,
+        builder: (_) => const AlertDialog(
+          title: Text('Cannot schedule reminder'),
+          content: Text(
+            'This event time is already in the past. '
+                'You cannot set a reminder for a past time.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final diff = dt.difference(now);
+    final bool moreThanTwoHours = diff > const Duration(hours: 2);
 
     await NotificationService.scheduleEventReminder(
-      id: e.id,
-      title: 'Upcoming event: ${e.title}',
-      body: 'Starts at ${e.dateTimeText}',
+      id: event.id,
+      title: event.title,
+      body:
+      'Reminder: ${event.title} at ${event.locationName} on ${event.dateTimeText}',
       eventTime: dt,
     );
 
     if (!mounted) return;
+
+    final message = moreThanTwoHours
+        ? 'Reminder set: you will get a notification 2 hours before the event.'
+        : 'Reminder set: the event is soon, you will get a notification shortly.';
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Reminder set for ${DateFormat('MMM d, h:mm a').format(dt.subtract(const Duration(hours: 2)))}',
-        ),
-      ),
+      SnackBar(content: Text(message)),
     );
   }
 
-  Future<void> _openInMaps() async {
-    final e = _event;
-    if (e == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Event not loaded yet')),
-      );
-      return;
-    }
+  //maps
 
-    Uri? uri;
-
-    if (e.latitude != null && e.longitude != null) {
-      uri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=${e.latitude},${e.longitude}',
-      );
-    } else if (e.locationName.isNotEmpty) {
-      final query = Uri.encodeComponent(e.locationName);
-      uri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=$query',
-      );
-    }
-
-    if (uri == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No location information for this event')),
-      );
-      return;
-    }
+  Future<void> _openInMaps(Event e) async {
+    final query = Uri.encodeComponent(e.locationName);
+    final uri =
+    Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
 
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open Google Maps')),
-      );
-    }
-  }
-
-  Future<void> _openVideo() async {
-    final e = _event;
-    if (e == null || e.videoUrl == null || e.videoUrl!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No video for this event')),
-      );
-      return;
-    }
-    final uri = Uri.parse(e.videoUrl!);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open video')),
+        const SnackBar(content: Text('Could not open Maps.')),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-    if (_event == null) {
-      return const Scaffold(
-        body: Center(child: Text('Event not found')),
-      );
-    }
-
-    final e = _event!;
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: true,
-        title: Text(e.title),
+        title: Text(_event?.title ?? 'Event'),
         foregroundColor: Colors.white,
         elevation: 0,
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF4C1D95), Color(0xFF6D28D9)],
+              colors: [
+                Color(0xFF4C1D95),
+                Color(0xFF6D28D9),
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -251,179 +204,111 @@ class _EventDetailPageState extends State<EventDetailPage> {
         ),
       ),
       backgroundColor: const Color(0xFFF7F7FB),
-      body: SingleChildScrollView(
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _event == null
+          ? const Center(child: Text('Event not found.'))
+          : _buildContent(context, _event!, theme),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, Event e, ThemeData theme) {
+    final hasImage = e.imageUrl != null && e.imageUrl!.trim().isNotEmpty;
+
+    return SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Media area: image first, otherwise a video button
-            if (e.imageUrl != null && e.imageUrl!.isNotEmpty)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Image.network(
-                  e.imageUrl!,
-                  height: 220,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              )
-            else if (e.videoUrl != null && e.videoUrl!.isNotEmpty)
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    const Icon(
-                      Icons.play_circle_fill,
-                      size: 50,
-                      color: Color(0xFF6D28D9),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'This event has a video',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: _openVideo,
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 10,
-                        ),
-                        backgroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          side: BorderSide(
-                            color: const Color(0xFF6D28D9).withOpacity(0.2),
-                          ),
-                        ),
-                      ),
-                      child: const Text(
-                        'Open event video',
-                        style: TextStyle(
-                          color: Color(0xFF6D28D9),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            if ((e.imageUrl != null && e.imageUrl!.isNotEmpty) ||
-                (e.videoUrl != null && e.videoUrl!.isNotEmpty))
-              const SizedBox(height: 20),
-
-            // Main info card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Hosted by: ${e.hostName}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'When: ${e.dateTimeText}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Where: ${e.locationName}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    e.description,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Clean, non-overflowing buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _openInMaps,
-                          icon: const Icon(Icons.map_outlined),
-                          label: const Text(
-                            'Open in Maps',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            padding:
-                            const EdgeInsets.symmetric(vertical: 12),
-                            minimumSize: const Size(0, 48),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _setReminder,
-                          icon:
-                          const Icon(Icons.notifications_active_outlined),
-                          label: const Text(
-                            'Set reminder',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4C1D95),
-                            foregroundColor: Colors.white,
-                            padding:
-                            const EdgeInsets.symmetric(vertical: 12),
-                            minimumSize: const Size(0, 48),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+            if (hasImage) ...[
+    ClipRRect(
+    borderRadius: BorderRadius.circular(18),
+    child: AspectRatio(
+    aspectRatio: 16 / 9,
+    child: Image.network(
+    e.imageUrl!.trim(),
+    fit: BoxFit.cover,
+    loadingBuilder: (context, child, loadingProgress) {
+    if (loadingProgress == null) return child;
+    return const Center(child: CircularProgressIndicator());
+    },
+    errorBuilder: (context, error, stackTrace) {
+    return Container(
+    color: Colors.grey[300],
+    alignment: Alignment.center,
+    child: const Icon(Icons.broken_image, size: 40),
+    );
+    },
+    ),
+    ),
+    ),
+    const SizedBox(height: 16),
+    ],
+    Card(
+    shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(18),
+    ),
+    elevation: 3,
+    child: Padding(
+    padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
+    child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+    Text(
+    e.title,
+    style: theme.textTheme.titleLarge?.copyWith(
+    fontWeight: FontWeight.bold,
+    color: Colors.black87,
+    ),
+    ),
+    const SizedBox(height: 8),
+    Text('Hosted by: ${e.hostName}'),
+    const SizedBox(height: 4),
+    Text('When: ${e.dateTimeText}'),
+    const SizedBox(height: 4),
+    Text('Where: ${e.locationName}'),
+    const SizedBox(height: 12),
+    Text(e.description),
+    const SizedBox(height: 18),
+    Row(
+    children: [
+    Expanded(
+    child: OutlinedButton.icon(
+    style: OutlinedButton.styleFrom(
+    padding: const EdgeInsets.symmetric(
+    vertical: 12,
+    horizontal: 12,
+    ),
+    ),
+    onPressed: () => _openInMaps(e),
+    icon: const Icon(Icons.map_outlined),
+    label: const Text('Open in Maps'),
+    ),
+    ),
+    const SizedBox(width: 12),
+    Expanded(
+    child: ElevatedButton.icon(
+    style: ElevatedButton.styleFrom(
+    padding: const EdgeInsets.symmetric(
+    vertical: 12,
+    horizontal: 12,
+    ),
+    ),
+    onPressed: () => _scheduleReminder(context),
+    icon: const Icon(
+    Icons.notifications_active_outlined,
+    ),
+    label: const Text('Set reminder'),
+    ),
+    ),
+    ],
+    ),
+    ],
+    ),
+    ),
+    ),
+    ],
+    ),
     );
   }
 }

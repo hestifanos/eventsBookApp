@@ -2,7 +2,7 @@ class AppUser {
   final String uid;
   final String email;
   final String? displayName;
-  final String role; // "student" or "organizer"
+  final String role; // student or organizer
 
   AppUser({
     required this.uid,
@@ -11,6 +11,7 @@ class AppUser {
     required this.role,
   });
 
+  // from the app to firestore
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
@@ -20,6 +21,7 @@ class AppUser {
     };
   }
 
+  // from firestore to the app
   factory AppUser.fromMap(Map<String, dynamic> map) {
     return AppUser(
       uid: map['uid'] as String,

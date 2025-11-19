@@ -18,6 +18,7 @@ class AuthService {
     return AppUser.fromMap(doc.data()!);
   }
 
+  // create user in the firebase
   Future<AppUser?> register({
     required String email,
     required String password,

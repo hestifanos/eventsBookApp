@@ -11,7 +11,7 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   GoogleMapController? _controller;
 
-  // Example: Ontario Tech University coordinates (rough)
+  // Ontario Tech University coordinates
   static const _campusCenter = LatLng(43.9449, -78.8964);
 
   @override

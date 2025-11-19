@@ -1,4 +1,4 @@
-// lib/services/event_service.dart
+
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -15,110 +15,28 @@ class EventService {
 
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  /// Stream all events in real time.
+  // Stream all events in real time.
   Stream<List<Event>> getEventsStream() {
-    return _eventsRef.snapshots().map(
-          (snapshot) {
-        return snapshot.docs
-            .map(
-              (doc) => Event.fromDoc(
-            doc.id,
-            doc.data(),
-          ),
-        )
-            .toList();
-      },
-    );
+    return _eventsRef.snapshots().map((snapshot) {
+      return snapshot.docs
+          .map(
+            (doc) => Event.fromMap(
+          doc.id,
+          doc.data(),
+        ),
+      )
+          .toList();
+    });
   }
 
-  /// Get a single event by id. Returns null if it doesn't exist.
+  // Get a single event by id. Returns null if it doesn't exist.
   Future<Event?> getEvent(String id) async {
     final doc = await _eventsRef.doc(id).get();
     if (!doc.exists) return null;
-    final data = doc.data();
-    if (data == null) return null;
-    return Event.fromDoc(doc.id, data);
+    return Event.fromMap(doc.id, doc.data()!);
   }
 
-  /// Delete an event by id.
-  Future<void> deleteEvent(String id) async {
-    await _eventsRef.doc(id).delete();
-  }
-
-  /// Upload an image to Firebase Storage and return its download URL.
-  /// If [imageFile] is null OR upload fails with object-not-found, this returns null.
-  Future<String?> _uploadEventImage(String eventId, XFile? imageFile) async {
-    if (imageFile == null) {
-      print('DEBUG: No image selected for event $eventId');
-      return null;
-    }
-
-    final file = File(imageFile.path);
-    final ref = _storage.ref().child('event_images/$eventId.jpg');
-
-    try {
-      print('DEBUG: Uploading image for event $eventId to ${ref.fullPath}');
-      final snapshot = await ref.putFile(file);
-
-      if (snapshot.state == TaskState.success) {
-        final url = await ref.getDownloadURL();
-        print('DEBUG: Image uploaded successfully. URL = $url');
-        return url;
-      } else {
-        print('DEBUG: Image upload for $eventId did not reach success state.');
-        return null;
-      }
-    } on FirebaseException catch (e) {
-      if (e.code == 'object-not-found') {
-        print('DEBUG: Image object-not-found at ${ref.fullPath}');
-        return null;
-      }
-      print('ERROR: Image upload failed for $eventId → ${e.code}: ${e.message}');
-      rethrow; // let other errors bubble up (permission, rules, network)
-    } catch (e) {
-      print('ERROR: Unexpected error during image upload for $eventId → $e');
-      rethrow;
-    }
-  }
-
-  /// Upload a video to Firebase Storage and return its download URL.
-  /// If [videoFile] is null OR upload fails with object-not-found, this returns null.
-  Future<String?> _uploadEventVideo(String eventId, XFile? videoFile) async {
-    if (videoFile == null) {
-      print('DEBUG: No video selected for event $eventId');
-      return null;
-    }
-
-    final file = File(videoFile.path);
-    final ref = _storage.ref().child('event_videos/$eventId.mp4');
-
-    try {
-      print('DEBUG: Uploading video for event $eventId to ${ref.fullPath}');
-      final snapshot = await ref.putFile(file);
-
-      if (snapshot.state == TaskState.success) {
-        final url = await ref.getDownloadURL();
-        print('DEBUG: Video uploaded successfully. URL = $url');
-        return url;
-      } else {
-        print('DEBUG: Video upload for $eventId did not reach success state.');
-        return null;
-      }
-    } on FirebaseException catch (e) {
-      if (e.code == 'object-not-found') {
-        print('DEBUG: Video object-not-found at ${ref.fullPath}');
-        return null;
-      }
-      print('ERROR: Video upload failed for $eventId → ${e.code}: ${e.message}');
-      rethrow;
-    } catch (e) {
-      print('ERROR: Unexpected error during video upload for $eventId → $e');
-      rethrow;
-    }
-  }
-
-  /// Create a new event document. If [imageFile] or [videoFile] is provided,
-  /// they are uploaded and their URLs stored on the Event.
+  // Create a new event document and optionally upload image/video.
   Future<void> createEvent({
     required String title,
     required String description,
@@ -132,32 +50,144 @@ class EventService {
     XFile? imageFile,
     XFile? videoFile,
   }) async {
-    final docRef = _eventsRef.doc(); // auto id
+    // Create the Firestore document without media URLs.
+    final docRef = await _eventsRef.add({
+      'title': title,
+      'description': description,
+      'hostId': hostId,
+      'hostName': hostName,
+      'maxAttendees': maxAttendees,
+      'currentAttendees': 0,
+      'dateTimeText': dateTimeText,
+      'locationName': locationName,
+      'latitude': latitude,
+      'longitude': longitude,
+      'imageUrl': null,
+      'videoUrl': null,
+    });
+
     final eventId = docRef.id;
 
-    print('DEBUG: Creating event $eventId with title "$title"');
+    String? imageUrl;
+    String? videoUrl;
 
-    // Upload media first (if present)
-    final imageUrl = await _uploadEventImage(eventId, imageFile);
-    final videoUrl = await _uploadEventVideo(eventId, videoFile);
+    // Upload media if provided.
+    imageUrl = await _uploadEventImage(eventId, imageFile);
+    videoUrl = await _uploadEventVideo(eventId, videoFile);
 
-    final event = Event(
-      id: eventId,
-      title: title,
-      description: description,
-      hostId: hostId,
-      hostName: hostName,
-      maxAttendees: maxAttendees,
-      currentAttendees: 0,
-      dateTimeText: dateTimeText,
-      locationName: locationName,
-      latitude: latitude,
-      longitude: longitude,
-      imageUrl: imageUrl,
-      videoUrl: videoUrl,
-    );
+    // Update Firestore if we got any URLs.
+    if (imageUrl != null || videoUrl != null) {
+      await docRef.update({
+        if (imageUrl != null) 'imageUrl': imageUrl,
+        if (videoUrl != null) 'videoUrl': videoUrl,
+      });
+    }
+  }
 
-    await docRef.set(event.toMap());
-    print('DEBUG: Event $eventId saved to Firestore with imageUrl=$imageUrl videoUrl=$videoUrl');
+  // Delete an event and its media as well.
+  Future<void> deleteEvent(String id) async {
+    await _eventsRef.doc(id).delete();
+
+    try {
+      final folderRef = _storage.ref().child('events').child(id);
+      final listResult = await folderRef.listAll();
+      for (final item in listResult.items) {
+        await item.delete();
+      }
+    } catch (_) {
+
+    }
+  }
+
+  Future<String?> _uploadEventImage(String eventId, XFile? imageFile) async {
+    if (imageFile == null) {
+      print('No image selected for event $eventId');
+      return null;
+    }
+
+    final file = File(imageFile.path);
+    if (!file.existsSync()) {
+      print('Local image file does not exist: ${imageFile.path}');
+      return null;
+    }
+
+    final fileName = imageFile.name.isNotEmpty
+        ? imageFile.name
+        : 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+    final ext = fileName.split('.').last.toLowerCase();
+    final contentType =
+    ext == 'png' ? 'image/png' : ext == 'webp' ? 'image/webp' : 'image/jpeg';
+
+    final ref = _storage
+        .ref()
+        .child('events')
+        .child(eventId)
+        .child('images')
+        .child(fileName);
+
+    try {
+      final snapshot =
+      await ref.putFile(file, SettableMetadata(contentType: contentType));
+
+      if (snapshot.state != TaskState.success) {
+        print(
+            'Image upload incomplete for event $eventId (state: ${snapshot.state})');
+        return null;
+      }
+
+      final url = await snapshot.ref.getDownloadURL();
+      print('Image uploaded successfully for $eventId: $url');
+      return url;
+    } on FirebaseException catch (e) {
+      print(
+          'Image upload failed for event $eventId: ${e.code} ${e.message}');
+      return null;
+    }
+  }
+
+  Future<String?> _uploadEventVideo(String eventId, XFile? videoFile) async {
+    if (videoFile == null) {
+      print('No video selected for event $eventId');
+      return null;
+    }
+
+    final file = File(videoFile.path);
+    if (!file.existsSync()) {
+      print('Local video file does not exist: ${videoFile.path}');
+      return null;
+    }
+
+    final fileName = videoFile.name.isNotEmpty
+        ? videoFile.name
+        : 'video_${DateTime.now().millisecondsSinceEpoch}.mp4';
+
+    final ref = _storage
+        .ref()
+        .child('events')
+        .child(eventId)
+        .child('videos')
+        .child(fileName);
+
+    try {
+      final snapshot = await ref.putFile(
+        file,
+        SettableMetadata(contentType: 'video/mp4'),
+      );
+
+      if (snapshot.state != TaskState.success) {
+        print(
+            'Video upload incomplete for event $eventId (state: ${snapshot.state})');
+        return null;
+      }
+
+      final url = await snapshot.ref.getDownloadURL();
+      print('Video uploaded successfully for $eventId: $url');
+      return url;
+    } on FirebaseException catch (e) {
+      print(
+          'Video upload failed for event $eventId: ${e.code} ${e.message}');
+      return null;
+    }
   }
 }

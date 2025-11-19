@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'campuseventflutter.firebasestorage.app',
     measurementId: 'G-5PF5NX5E2W',
   );
+
 }

@@ -1,6 +1,5 @@
-// lib/screens/admin_page.dart
-import 'package:flutter/material.dart';
 
+import 'package:flutter/material.dart';
 import '../models/app_user.dart';
 import '../services/event_service.dart';
 import '../models/event.dart';
@@ -10,7 +9,9 @@ import 'event_detail_page.dart';
 class AdminPage extends StatelessWidget {
   final AppUser user;
 
-  const AdminPage({super.key, required this.user});
+  const AdminPage(
+      {super.key, required this.user}
+      );
 
   Future<void> _confirmDelete(
       BuildContext context,
@@ -55,7 +56,7 @@ class AdminPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: true,
-        title: const Text('Organizer Dashboard'),
+        title: const Text('Admin Dashboard'),
         foregroundColor: Colors.white,
         elevation: 0,
         flexibleSpace: Container(
@@ -104,7 +105,7 @@ class AdminPage extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // ----- STAT CARDS -----
+                        // number of event for the admin
                         Row(
                           children: [
                             _StatCard(

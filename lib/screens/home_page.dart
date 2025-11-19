@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
-
 import '../services/auth_service.dart';
 import '../services/event_service.dart';
-
 import '../models/app_user.dart';
 import '../models/event.dart';
-
 import '../widgets/event_card.dart';
-
 import 'create_event_page.dart';
 import 'event_list_page.dart';
 import 'account_page.dart';
@@ -109,7 +105,7 @@ class _HomePageState extends State<HomePage> {
     final isOrganizer = user.role == 'organizer';
     final theme = Theme.of(context);
 
-    // -------- HEADER (same for both roles) --------
+    //header
     final header = Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 18.0),
@@ -266,7 +262,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// ---------- STUDENT HOME: inline event list ----------
+// student home
 
 class _StudentEventsBody extends StatelessWidget {
   final EventService eventService;
@@ -350,7 +346,7 @@ class _StudentEventsBody extends StatelessWidget {
   }
 }
 
-// ---------- ORGANIZER HOME: dashboard cards ----------
+// organizer home
 
 class _OrganizerBody extends StatelessWidget {
   final AppUser user;
@@ -399,7 +395,7 @@ class _OrganizerBody extends StatelessWidget {
               ),
               _HomeActionCard(
                 icon: Icons.dashboard_customize_outlined,
-                title: 'Admin / My Events',
+                title: 'Admin',
                 description:
                 'Manage your events, stats and visibility.',
                 onTap: () {

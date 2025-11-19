@@ -1,6 +1,5 @@
-// lib/screens/event_list_page.dart
-import 'package:flutter/material.dart';
 
+import 'package:flutter/material.dart';
 import '../services/event_service.dart';
 import '../models/event.dart';
 import '../widgets/event_card.dart';
