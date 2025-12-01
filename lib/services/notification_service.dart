@@ -11,7 +11,7 @@ class NotificationService {
 
   static bool _initialized = false;
 
-  // Initialize plugin + ask for notification permission (Android 13+).
+  // Initialize plugin and ask for notification permission.
   static Future<void> init() async {
     if (_initialized) return;
 
@@ -29,10 +29,10 @@ class NotificationService {
     debugPrint('NotificationService: initialized');
   }
 
-  // Schedule reminder with rules:
+  // Schedule reminder with rules that are
   // - If eventTime > 2h from now  => fire 2h before the event.
   // - If eventTime ≤ 2h from now  => fire 10s after tap.
-  // Caller must ensure eventTime is in the future.
+  // - Caller must ensure event time is in the future.
   static Future<void> scheduleEventReminder({
     required String id,
     required String title,
@@ -62,7 +62,7 @@ class NotificationService {
       );
     }
 
-    // Use a Timer so the app shows the notification even without alarms.
+    // Use a timer so the app shows the notification even without alarms.
     Timer(delay, () async {
       const androidDetails = AndroidNotificationDetails(
         'events_channel',

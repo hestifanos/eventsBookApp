@@ -2,7 +2,7 @@ class AppUser {
   final String uid;
   final String email;
   final String? displayName;
-  final String role; // student or organizer
+  final String role;
 
   AppUser({
     required this.uid,

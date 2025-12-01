@@ -36,15 +36,14 @@ class _EventDetailPageState extends State<EventDetailPage> {
     });
   }
 
-  //date/time parsing
-
+  // time parsing
   DateTime? _parseEventDateTime(String text) {
     final raw = text.trim();
     if (raw.isEmpty) return null;
 
     var normalized = raw.replaceAll(RegExp(r'\s+'), ' ');
 
-    // normalize am/pm
+    // normalize am and pm
     normalized = normalized.replaceAllMapped(
       RegExp(r'\b(am|pm)\b', caseSensitive: false),
           (m) => m.group(0)!.toUpperCase(),
@@ -95,7 +94,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
 
         return dt;
       } catch (_) {
-        // try next format
+
       }
     }
 
@@ -103,7 +102,6 @@ class _EventDetailPageState extends State<EventDetailPage> {
   }
 
   //reminder scheduling
-
   Future<void> _scheduleReminder(BuildContext context) async {
     final event = _event;
     if (event == null) return;
@@ -126,7 +124,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
 
     final now = DateTime.now();
 
-    // 1)  do NOT schedule past time
+    // 1)  do not schedule past time
     if (dt.isBefore(now)) {
       if (!mounted) return;
       showDialog<void>(

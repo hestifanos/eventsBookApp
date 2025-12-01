@@ -29,14 +29,14 @@ class EventService {
     });
   }
 
-  // Get a single event by id. Returns null if it doesn't exist.
+  // get a single event by id
   Future<Event?> getEvent(String id) async {
     final doc = await _eventsRef.doc(id).get();
     if (!doc.exists) return null;
     return Event.fromMap(doc.id, doc.data()!);
   }
 
-  // Create a new event document and optionally upload image/video.
+  // Create a new event document and optionally upload image or video.
   Future<void> createEvent({
     required String title,
     required String description,
@@ -50,7 +50,7 @@ class EventService {
     XFile? imageFile,
     XFile? videoFile,
   }) async {
-    // Create the Firestore document without media URLs.
+    // create the firestore document without media URLs.
     final docRef = await _eventsRef.add({
       'title': title,
       'description': description,
@@ -75,7 +75,7 @@ class EventService {
     imageUrl = await _uploadEventImage(eventId, imageFile);
     videoUrl = await _uploadEventVideo(eventId, videoFile);
 
-    // Update Firestore if we got any URLs.
+    // update firestore if we got any URLs.
     if (imageUrl != null || videoUrl != null) {
       await docRef.update({
         if (imageUrl != null) 'imageUrl': imageUrl,
@@ -84,7 +84,7 @@ class EventService {
     }
   }
 
-  // Delete an event and its media as well.
+  // delete an event and its media as well.
   Future<void> deleteEvent(String id) async {
     await _eventsRef.doc(id).delete();
 

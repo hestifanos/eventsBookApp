@@ -125,7 +125,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
     try {
       final user = _auth.currentUser!;
 
-      //Normalize date/time text before saving
+      //Normalize time text before saving
       String rawDate = _dateTimeController.text.trim();
       String normalizedDate = rawDate.replaceAll('.', ':');
 

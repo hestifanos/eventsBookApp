@@ -12,18 +12,16 @@ import 'screens/home_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1) Initialize Firebase
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // 2) Initialize local notifications
+  //  Initialize local notifications
   await NotificationService.init();
 
-  // 3) Force a test notification on app start
-  //await NotificationService.debugTestNotification();
 
-  // 4) Run the app
+  // Run the app
   runApp(const CampusEventsApp());
 }
 
@@ -35,14 +33,14 @@ class CampusEventsApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final authService = AuthService();
 
-    // High-contrast, accessible color scheme
-    const seed = Color(0xFF4C1D95); // deep purple
+
+    const seed = Color(0xFF4C1D95);
     final colorScheme = ColorScheme.fromSeed(
       seedColor: seed,
       brightness: Brightness.light,
     );
 
-    // Slightly larger, higher-contrast text
+
     final baseText = ThemeData.light().textTheme;
     final textTheme = baseText.copyWith(
       bodyLarge: baseText.bodyLarge?.copyWith(fontSize: 18),
@@ -77,7 +75,7 @@ class CampusEventsApp extends StatelessWidget {
         textTheme: textTheme,
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            minimumSize: const Size(120, 48), // big tap targets
+            minimumSize: const Size(120, 48),
             textStyle: textTheme.labelLarge,
           ),
         ),
