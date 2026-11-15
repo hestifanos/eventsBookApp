@@ -1,30 +1,51 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-/*import 'package:flutter/material.dart';
+import 'package:campus_events/models/event.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:campus_events/main.dart';
-
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  group('Event.fromMap', () {
+    test('converts Firestore numeric values and preserves optional media', () {
+      final event = Event.fromMap('event-1', {
+        'title': 'Campus fair',
+        'maxAttendees': 25.0,
+        'currentAttendees': '4',
+        'latitude': '43.6532',
+        'longitude': -79.3832,
+        'imageUrl': 'https://example.com/image.jpg',
+      });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+      expect(event.id, 'event-1');
+      expect(event.title, 'Campus fair');
+      expect(event.maxAttendees, 25);
+      expect(event.currentAttendees, 4);
+      expect(event.latitude, 43.6532);
+      expect(event.longitude, -79.3832);
+      expect(event.imageUrl, 'https://example.com/image.jpg');
+      expect(event.videoUrl, isNull);
+    });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    test('defaults missing optional fields', () {
+      final event = Event.fromMap('event-2', {});
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+      expect(event.title, isEmpty);
+      expect(event.maxAttendees, 0);
+      expect(event.currentAttendees, 0);
+      expect(event.latitude, isNull);
+      expect(event.imageUrl, isNull);
+    });
+
+    test('rejects malformed stored fields instead of silently defaulting', () {
+      for (final fields in [
+        {'title': 42},
+        {'maxAttendees': 'many'},
+        {'currentAttendees': true},
+        {'latitude': 'north'},
+        {'imageUrl': 100},
+      ]) {
+        expect(
+          () => Event.fromMap('event-3', fields),
+          throwsA(isA<FormatException>()),
+        );
+      }
+    });
   });
-}*/
+}

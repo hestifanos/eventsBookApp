@@ -55,18 +55,53 @@ class Event {
   factory Event.fromMap(String id, Map<String, dynamic> map) {
     return Event(
       id: id,
-      title: map['title'] as String? ?? '',
-      description: map['description'] as String? ?? '',
-      hostId: map['hostId'] as String? ?? '',
-      hostName: map['hostName'] as String? ?? '',
-      maxAttendees: (map['maxAttendees'] as num? ?? 0).toInt(),
-      currentAttendees: (map['currentAttendees'] as num? ?? 0).toInt(),
-      dateTimeText: map['dateTimeText'] as String? ?? '',
-      locationName: map['locationName'] as String? ?? '',
-      latitude: (map['latitude'] as num?)?.toDouble(),
-      longitude: (map['longitude'] as num?)?.toDouble(),
-      imageUrl: map['imageUrl'] as String?,
-      videoUrl: map['videoUrl'] as String?,
+      title: _readString(map['title']),
+      description: _readString(map['description']),
+      hostId: _readString(map['hostId']),
+      hostName: _readString(map['hostName']),
+      maxAttendees: _readInt('maxAttendees', map['maxAttendees']),
+      currentAttendees: _readInt('currentAttendees', map['currentAttendees']),
+      dateTimeText: _readString(map['dateTimeText']),
+      locationName: _readString(map['locationName']),
+      latitude: _readDouble('latitude', map['latitude']),
+      longitude: _readDouble('longitude', map['longitude']),
+      imageUrl: _readOptionalString('imageUrl', map['imageUrl']),
+      videoUrl: _readOptionalString('videoUrl', map['videoUrl']),
     );
+  }
+
+  static String _readString(Object? value) {
+    if (value == null) return '';
+    if (value is String) return value;
+    throw FormatException('Expected a string value');
+  }
+
+  static String? _readOptionalString(String field, Object? value) {
+    if (value == null) return null;
+    if (value is String) return value;
+    throw FormatException('$field must be a string');
+  }
+
+  static int _readInt(String field, Object? value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is num && value.isFinite && value == value.toInt()) {
+      return value.toInt();
+    }
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      if (parsed != null) return parsed;
+    }
+    throw FormatException('$field must be an integer');
+  }
+
+  static double? _readDouble(String field, Object? value) {
+    if (value == null) return null;
+    if (value is num && value.isFinite) return value.toDouble();
+    if (value is String) {
+      final parsed = double.tryParse(value);
+      if (parsed != null && parsed.isFinite) return parsed;
+    }
+    throw FormatException('$field must be a finite number');
   }
 }
